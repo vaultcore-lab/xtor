@@ -1336,6 +1336,54 @@ private:
         }
     }
 
+    void pushStack(IRValue val, IRBasicBlock& block){
+        IRValue rsp = IRValue::makeVReg(GprVReg::RSP, IRType::i64(), "rsp"); 
+
+        uint32_t newSpId = newTemp(); 
+
+        //rsp_dec : rsp - 8 
+        block.pushInst(IRInst::makeBinop(
+            Opcode::SUB, VReg(newSpId, "rsp_dec"), IRType::i64(), 
+            rsp, IRValue::makeImm(8, IRType::i64()))); 
+
+        //mov rsp , spId
+        //now rsp hold stack pointer position 
+        block.pushInst(IRInst::makeMov(
+            VReg(GprVReg::RSP), IRType::i64(), 
+            IRValue::makeVReg(newSpId, IRType::i64()))); 
+        
+        uint32_t ptrId = newTemp(); 
+        block.pushInst(IRInst::makeCast(
+            Opcode::INTTOPTR, VReg(ptrId, "stack_ptr"), IRType::ptr(), 
+            IRValue::makeVReg(newSpId, IRType::i64())));
+
+        block.pushInst(IRInst::makeStore(
+            val, IRValue::makeVReg(ptrId, IRType::ptr()), MemFlags(8))); 
+    }
+
+    IRValue popStack(IRBasicBlock& block){
+        IRValue rsp = IRValue::makeVReg(GprVReg::RSP, IRType::i64(), "rsp"); 
+
+        uint32_t ptrId = newTemp(); 
+        block.pushInst(IRInst::makeCast(
+            Opcode::INTTOPTR, VReg(ptrId, "stack_ptr"), IRType::ptr(), rsp)); 
+
+        uint64_t valId = newTemp(); 
+        block.pushInst(IRInst::makeLoad(
+            VReg(valId, "popped"), IRValue::i64(), 
+            IRValue::makeVReg(ptrId, IRType::ptr()), MemFlags(8))); 
+
+        uint32_t newSpId = newTemp(); 
+        block.pushInst(IRInst::makeBinop(
+            Opcode::ADD, VReg(newSpId, "rsp_inc"), IRType::i64(), 
+            rsp, IRValue::makeImm(8, IRType::i64()))); 
+        
+        block.pushInst(IRInst::makeMov(
+            VReg(GprVReg::RSP, "rsp"), IRType::i64(),
+            IRValue::makeVReg(newSpId, IRType::i64()))); 
+
+    }
+
 
 
     //Maps the zydis mnemonic of a conditional jump to the 
