@@ -1,4 +1,0 @@
-/home/chrinovic/Workspace/Projects/xtor/build/CMakeFiles/instrax.dir
-/home/chrinovic/Workspace/Projects/xtor/build/CMakeFiles/test_program.dir
-/home/chrinovic/Workspace/Projects/xtor/build/CMakeFiles/edit_cache.dir
-/home/chrinovic/Workspace/Projects/xtor/build/CMakeFiles/rebuild_cache.dir

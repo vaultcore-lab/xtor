@@ -1,1 +1,0 @@
-/usr/bin/cc CMakeFiles/test_program.dir/programs/test.c.o -o test_program 
