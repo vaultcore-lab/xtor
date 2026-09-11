@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/chrinovic/Workspace/Projects/X2R
+CMAKE_SOURCE_DIR = /home/chrinovic/Workspace/Projects/xtor
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/chrinovic/Workspace/Projects/X2R/build
+CMAKE_BINARY_DIR = /home/chrinovic/Workspace/Projects/xtor/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,9 +87,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/chrinovic/Workspace/Projects/X2R/build/CMakeFiles /home/chrinovic/Workspace/Projects/X2R/build//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/chrinovic/Workspace/Projects/xtor/build/CMakeFiles /home/chrinovic/Workspace/Projects/xtor/build//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/chrinovic/Workspace/Projects/X2R/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/chrinovic/Workspace/Projects/xtor/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -129,6 +129,43 @@ instrax/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/build
 .PHONY : instrax/fast
 
+#=============================================================================
+# Target rules for targets named test_program
+
+# Build rule for target.
+test_program: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_program
+.PHONY : test_program
+
+# fast build rule for target.
+test_program/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_program.dir/build.make CMakeFiles/test_program.dir/build
+.PHONY : test_program/fast
+
+programs/test.o: programs/test.c.o
+.PHONY : programs/test.o
+
+# target to build an object file
+programs/test.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_program.dir/build.make CMakeFiles/test_program.dir/programs/test.c.o
+.PHONY : programs/test.c.o
+
+programs/test.i: programs/test.c.i
+.PHONY : programs/test.i
+
+# target to preprocess a source file
+programs/test.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_program.dir/build.make CMakeFiles/test_program.dir/programs/test.c.i
+.PHONY : programs/test.c.i
+
+programs/test.s: programs/test.c.s
+.PHONY : programs/test.s
+
+# target to generate assembly for a file
+programs/test.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_program.dir/build.make CMakeFiles/test_program.dir/programs/test.c.s
+.PHONY : programs/test.c.s
+
 src/ELFLoader.o: src/ELFLoader.cpp.o
 .PHONY : src/ELFLoader.o
 
@@ -153,53 +190,77 @@ src/ELFLoader.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/ELFLoader.cpp.s
 .PHONY : src/ELFLoader.cpp.s
 
-src/IRLift.o: src/IRLift.cpp.o
-.PHONY : src/IRLift.o
+src/backend/x86/X86Lifter.o: src/backend/x86/X86Lifter.cpp.o
+.PHONY : src/backend/x86/X86Lifter.o
 
 # target to build an object file
-src/IRLift.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/IRLift.cpp.o
-.PHONY : src/IRLift.cpp.o
+src/backend/x86/X86Lifter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/backend/x86/X86Lifter.cpp.o
+.PHONY : src/backend/x86/X86Lifter.cpp.o
 
-src/IRLift.i: src/IRLift.cpp.i
-.PHONY : src/IRLift.i
+src/backend/x86/X86Lifter.i: src/backend/x86/X86Lifter.cpp.i
+.PHONY : src/backend/x86/X86Lifter.i
 
 # target to preprocess a source file
-src/IRLift.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/IRLift.cpp.i
-.PHONY : src/IRLift.cpp.i
+src/backend/x86/X86Lifter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/backend/x86/X86Lifter.cpp.i
+.PHONY : src/backend/x86/X86Lifter.cpp.i
 
-src/IRLift.s: src/IRLift.cpp.s
-.PHONY : src/IRLift.s
+src/backend/x86/X86Lifter.s: src/backend/x86/X86Lifter.cpp.s
+.PHONY : src/backend/x86/X86Lifter.s
 
 # target to generate assembly for a file
-src/IRLift.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/IRLift.cpp.s
-.PHONY : src/IRLift.cpp.s
+src/backend/x86/X86Lifter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/backend/x86/X86Lifter.cpp.s
+.PHONY : src/backend/x86/X86Lifter.cpp.s
 
-src/disasm.o: src/disasm.cpp.o
-.PHONY : src/disasm.o
+src/ir/Flagstate.o: src/ir/Flagstate.cpp.o
+.PHONY : src/ir/Flagstate.o
 
 # target to build an object file
-src/disasm.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/disasm.cpp.o
-.PHONY : src/disasm.cpp.o
+src/ir/Flagstate.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/ir/Flagstate.cpp.o
+.PHONY : src/ir/Flagstate.cpp.o
 
-src/disasm.i: src/disasm.cpp.i
-.PHONY : src/disasm.i
+src/ir/Flagstate.i: src/ir/Flagstate.cpp.i
+.PHONY : src/ir/Flagstate.i
 
 # target to preprocess a source file
-src/disasm.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/disasm.cpp.i
-.PHONY : src/disasm.cpp.i
+src/ir/Flagstate.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/ir/Flagstate.cpp.i
+.PHONY : src/ir/Flagstate.cpp.i
 
-src/disasm.s: src/disasm.cpp.s
-.PHONY : src/disasm.s
+src/ir/Flagstate.s: src/ir/Flagstate.cpp.s
+.PHONY : src/ir/Flagstate.s
 
 # target to generate assembly for a file
-src/disasm.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/disasm.cpp.s
-.PHONY : src/disasm.cpp.s
+src/ir/Flagstate.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/ir/Flagstate.cpp.s
+.PHONY : src/ir/Flagstate.cpp.s
+
+src/ir/IR.o: src/ir/IR.cpp.o
+.PHONY : src/ir/IR.o
+
+# target to build an object file
+src/ir/IR.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/ir/IR.cpp.o
+.PHONY : src/ir/IR.cpp.o
+
+src/ir/IR.i: src/ir/IR.cpp.i
+.PHONY : src/ir/IR.i
+
+# target to preprocess a source file
+src/ir/IR.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/ir/IR.cpp.i
+.PHONY : src/ir/IR.cpp.i
+
+src/ir/IR.s: src/ir/IR.cpp.s
+.PHONY : src/ir/IR.s
+
+# target to generate assembly for a file
+src/ir/IR.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/ir/IR.cpp.s
+.PHONY : src/ir/IR.cpp.s
 
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
@@ -225,6 +286,102 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+src/runtime/ElfMapper.o: src/runtime/ElfMapper.cpp.o
+.PHONY : src/runtime/ElfMapper.o
+
+# target to build an object file
+src/runtime/ElfMapper.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/runtime/ElfMapper.cpp.o
+.PHONY : src/runtime/ElfMapper.cpp.o
+
+src/runtime/ElfMapper.i: src/runtime/ElfMapper.cpp.i
+.PHONY : src/runtime/ElfMapper.i
+
+# target to preprocess a source file
+src/runtime/ElfMapper.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/runtime/ElfMapper.cpp.i
+.PHONY : src/runtime/ElfMapper.cpp.i
+
+src/runtime/ElfMapper.s: src/runtime/ElfMapper.cpp.s
+.PHONY : src/runtime/ElfMapper.s
+
+# target to generate assembly for a file
+src/runtime/ElfMapper.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/runtime/ElfMapper.cpp.s
+.PHONY : src/runtime/ElfMapper.cpp.s
+
+src/runtime/GuestMemory.o: src/runtime/GuestMemory.cpp.o
+.PHONY : src/runtime/GuestMemory.o
+
+# target to build an object file
+src/runtime/GuestMemory.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/runtime/GuestMemory.cpp.o
+.PHONY : src/runtime/GuestMemory.cpp.o
+
+src/runtime/GuestMemory.i: src/runtime/GuestMemory.cpp.i
+.PHONY : src/runtime/GuestMemory.i
+
+# target to preprocess a source file
+src/runtime/GuestMemory.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/runtime/GuestMemory.cpp.i
+.PHONY : src/runtime/GuestMemory.cpp.i
+
+src/runtime/GuestMemory.s: src/runtime/GuestMemory.cpp.s
+.PHONY : src/runtime/GuestMemory.s
+
+# target to generate assembly for a file
+src/runtime/GuestMemory.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/runtime/GuestMemory.cpp.s
+.PHONY : src/runtime/GuestMemory.cpp.s
+
+src/runtime/GuestStack.o: src/runtime/GuestStack.cpp.o
+.PHONY : src/runtime/GuestStack.o
+
+# target to build an object file
+src/runtime/GuestStack.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/runtime/GuestStack.cpp.o
+.PHONY : src/runtime/GuestStack.cpp.o
+
+src/runtime/GuestStack.i: src/runtime/GuestStack.cpp.i
+.PHONY : src/runtime/GuestStack.i
+
+# target to preprocess a source file
+src/runtime/GuestStack.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/runtime/GuestStack.cpp.i
+.PHONY : src/runtime/GuestStack.cpp.i
+
+src/runtime/GuestStack.s: src/runtime/GuestStack.cpp.s
+.PHONY : src/runtime/GuestStack.s
+
+# target to generate assembly for a file
+src/runtime/GuestStack.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/runtime/GuestStack.cpp.s
+.PHONY : src/runtime/GuestStack.cpp.s
+
+src/runtime/Loader.o: src/runtime/Loader.cpp.o
+.PHONY : src/runtime/Loader.o
+
+# target to build an object file
+src/runtime/Loader.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/runtime/Loader.cpp.o
+.PHONY : src/runtime/Loader.cpp.o
+
+src/runtime/Loader.i: src/runtime/Loader.cpp.i
+.PHONY : src/runtime/Loader.i
+
+# target to preprocess a source file
+src/runtime/Loader.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/runtime/Loader.cpp.i
+.PHONY : src/runtime/Loader.cpp.i
+
+src/runtime/Loader.s: src/runtime/Loader.cpp.s
+.PHONY : src/runtime/Loader.s
+
+# target to generate assembly for a file
+src/runtime/Loader.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/instrax.dir/build.make CMakeFiles/instrax.dir/src/runtime/Loader.cpp.s
+.PHONY : src/runtime/Loader.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -234,18 +391,37 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... instrax"
+	@echo "... test_program"
+	@echo "... programs/test.o"
+	@echo "... programs/test.i"
+	@echo "... programs/test.s"
 	@echo "... src/ELFLoader.o"
 	@echo "... src/ELFLoader.i"
 	@echo "... src/ELFLoader.s"
-	@echo "... src/IRLift.o"
-	@echo "... src/IRLift.i"
-	@echo "... src/IRLift.s"
-	@echo "... src/disasm.o"
-	@echo "... src/disasm.i"
-	@echo "... src/disasm.s"
+	@echo "... src/backend/x86/X86Lifter.o"
+	@echo "... src/backend/x86/X86Lifter.i"
+	@echo "... src/backend/x86/X86Lifter.s"
+	@echo "... src/ir/Flagstate.o"
+	@echo "... src/ir/Flagstate.i"
+	@echo "... src/ir/Flagstate.s"
+	@echo "... src/ir/IR.o"
+	@echo "... src/ir/IR.i"
+	@echo "... src/ir/IR.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/runtime/ElfMapper.o"
+	@echo "... src/runtime/ElfMapper.i"
+	@echo "... src/runtime/ElfMapper.s"
+	@echo "... src/runtime/GuestMemory.o"
+	@echo "... src/runtime/GuestMemory.i"
+	@echo "... src/runtime/GuestMemory.s"
+	@echo "... src/runtime/GuestStack.o"
+	@echo "... src/runtime/GuestStack.i"
+	@echo "... src/runtime/GuestStack.s"
+	@echo "... src/runtime/Loader.o"
+	@echo "... src/runtime/Loader.i"
+	@echo "... src/runtime/Loader.s"
 .PHONY : help
 
 

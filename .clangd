@@ -1,6 +1,5 @@
 CompileFlags:
   Add:
-    - -std=c23
     - -I.
     - -Iinclude
     - -I/usr/include

@@ -1,0 +1,52 @@
+[
+{
+  "directory": "/home/chrinovic/Workspace/Projects/xtor/build",
+  "command": "/usr/bin/c++  -I/home/chrinovic/Workspace/Projects/xtor/include -I/home/chrinovic/Workspace/Projects/xtor/src -I/home/chrinovic/Workspace/Projects/xtor/utils -I/home/chrinovic/Workspace/Projects/xtor/ELFIO -std=gnu++20 -o CMakeFiles/instrax.dir/src/main.cpp.o -c /home/chrinovic/Workspace/Projects/xtor/src/main.cpp",
+  "file": "/home/chrinovic/Workspace/Projects/xtor/src/main.cpp"
+},
+{
+  "directory": "/home/chrinovic/Workspace/Projects/xtor/build",
+  "command": "/usr/bin/c++  -I/home/chrinovic/Workspace/Projects/xtor/include -I/home/chrinovic/Workspace/Projects/xtor/src -I/home/chrinovic/Workspace/Projects/xtor/utils -I/home/chrinovic/Workspace/Projects/xtor/ELFIO -std=gnu++20 -o CMakeFiles/instrax.dir/src/ELFLoader.cpp.o -c /home/chrinovic/Workspace/Projects/xtor/src/ELFLoader.cpp",
+  "file": "/home/chrinovic/Workspace/Projects/xtor/src/ELFLoader.cpp"
+},
+{
+  "directory": "/home/chrinovic/Workspace/Projects/xtor/build",
+  "command": "/usr/bin/c++  -I/home/chrinovic/Workspace/Projects/xtor/include -I/home/chrinovic/Workspace/Projects/xtor/src -I/home/chrinovic/Workspace/Projects/xtor/utils -I/home/chrinovic/Workspace/Projects/xtor/ELFIO -std=gnu++20 -o CMakeFiles/instrax.dir/src/ir/IR.cpp.o -c /home/chrinovic/Workspace/Projects/xtor/src/ir/IR.cpp",
+  "file": "/home/chrinovic/Workspace/Projects/xtor/src/ir/IR.cpp"
+},
+{
+  "directory": "/home/chrinovic/Workspace/Projects/xtor/build",
+  "command": "/usr/bin/c++  -I/home/chrinovic/Workspace/Projects/xtor/include -I/home/chrinovic/Workspace/Projects/xtor/src -I/home/chrinovic/Workspace/Projects/xtor/utils -I/home/chrinovic/Workspace/Projects/xtor/ELFIO -std=gnu++20 -o CMakeFiles/instrax.dir/src/ir/Flagstate.cpp.o -c /home/chrinovic/Workspace/Projects/xtor/src/ir/Flagstate.cpp",
+  "file": "/home/chrinovic/Workspace/Projects/xtor/src/ir/Flagstate.cpp"
+},
+{
+  "directory": "/home/chrinovic/Workspace/Projects/xtor/build",
+  "command": "/usr/bin/c++  -I/home/chrinovic/Workspace/Projects/xtor/include -I/home/chrinovic/Workspace/Projects/xtor/src -I/home/chrinovic/Workspace/Projects/xtor/utils -I/home/chrinovic/Workspace/Projects/xtor/ELFIO -std=gnu++20 -o CMakeFiles/instrax.dir/src/backend/x86/X86Lifter.cpp.o -c /home/chrinovic/Workspace/Projects/xtor/src/backend/x86/X86Lifter.cpp",
+  "file": "/home/chrinovic/Workspace/Projects/xtor/src/backend/x86/X86Lifter.cpp"
+},
+{
+  "directory": "/home/chrinovic/Workspace/Projects/xtor/build",
+  "command": "/usr/bin/c++  -I/home/chrinovic/Workspace/Projects/xtor/include -I/home/chrinovic/Workspace/Projects/xtor/src -I/home/chrinovic/Workspace/Projects/xtor/utils -I/home/chrinovic/Workspace/Projects/xtor/ELFIO -std=gnu++20 -o CMakeFiles/instrax.dir/src/runtime/ElfMapper.cpp.o -c /home/chrinovic/Workspace/Projects/xtor/src/runtime/ElfMapper.cpp",
+  "file": "/home/chrinovic/Workspace/Projects/xtor/src/runtime/ElfMapper.cpp"
+},
+{
+  "directory": "/home/chrinovic/Workspace/Projects/xtor/build",
+  "command": "/usr/bin/c++  -I/home/chrinovic/Workspace/Projects/xtor/include -I/home/chrinovic/Workspace/Projects/xtor/src -I/home/chrinovic/Workspace/Projects/xtor/utils -I/home/chrinovic/Workspace/Projects/xtor/ELFIO -std=gnu++20 -o CMakeFiles/instrax.dir/src/runtime/GuestMemory.cpp.o -c /home/chrinovic/Workspace/Projects/xtor/src/runtime/GuestMemory.cpp",
+  "file": "/home/chrinovic/Workspace/Projects/xtor/src/runtime/GuestMemory.cpp"
+},
+{
+  "directory": "/home/chrinovic/Workspace/Projects/xtor/build",
+  "command": "/usr/bin/c++  -I/home/chrinovic/Workspace/Projects/xtor/include -I/home/chrinovic/Workspace/Projects/xtor/src -I/home/chrinovic/Workspace/Projects/xtor/utils -I/home/chrinovic/Workspace/Projects/xtor/ELFIO -std=gnu++20 -o CMakeFiles/instrax.dir/src/runtime/GuestStack.cpp.o -c /home/chrinovic/Workspace/Projects/xtor/src/runtime/GuestStack.cpp",
+  "file": "/home/chrinovic/Workspace/Projects/xtor/src/runtime/GuestStack.cpp"
+},
+{
+  "directory": "/home/chrinovic/Workspace/Projects/xtor/build",
+  "command": "/usr/bin/c++  -I/home/chrinovic/Workspace/Projects/xtor/include -I/home/chrinovic/Workspace/Projects/xtor/src -I/home/chrinovic/Workspace/Projects/xtor/utils -I/home/chrinovic/Workspace/Projects/xtor/ELFIO -std=gnu++20 -o CMakeFiles/instrax.dir/src/runtime/Loader.cpp.o -c /home/chrinovic/Workspace/Projects/xtor/src/runtime/Loader.cpp",
+  "file": "/home/chrinovic/Workspace/Projects/xtor/src/runtime/Loader.cpp"
+},
+{
+  "directory": "/home/chrinovic/Workspace/Projects/xtor/build",
+  "command": "/usr/bin/cc  -I/home/chrinovic/Workspace/Projects/xtor/include -I/home/chrinovic/Workspace/Projects/xtor/src -I/home/chrinovic/Workspace/Projects/xtor/utils  -o CMakeFiles/test_program.dir/programs/test.c.o -c /home/chrinovic/Workspace/Projects/xtor/programs/test.c",
+  "file": "/home/chrinovic/Workspace/Projects/xtor/programs/test.c"
+}
+]

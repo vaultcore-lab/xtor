@@ -31,8 +31,11 @@ GuestProcess GuestProcess::load(const std::string& path,
         imageLow, imageHigh, options.fallbackWindowSize);
 
     GuestMemory& mem = *process.m_memory;
+
     process.m_image = mapImage(process.m_file, mem, bias);
+
     applyRelocations(process.m_file, mem, process.m_image);
+
     applyRelro(process.m_file, mem, process.m_image);
 
     uint64_t stackTop = options.stackTop;
