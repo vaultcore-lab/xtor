@@ -1421,6 +1421,51 @@ private:
         }
     }
 
+    IRValue emitALU(IRBasicBlock& block, 
+                    Opcode op, IRType ty, 
+                    IRValue lhs, IRValue rhs, 
+                    std::optional<Flags::FlagOp> fop, 
+                    const char *tag){
+        
+        const uint32_t id = newTemp(); 
+        block.pushInst(IRInst::makeBinop(op, VReg(id, tag), ty, lhs, rhs)); 
+
+        const IRValue result = IRValue::makeVReg(id. ty); 
+
+        if(fop.has_value())
+            m_flagState.set(*fop, result ,lhs, rhs, ty); 
+
+        return result
+    }
+
+    enum class WriteBack{
+        No,
+        Yes 
+    }; 
+
+    //dst <- dst OP src
+    void emitRMV(const DecodedInstr& di, IRBasicBlock& block, 
+                 Opcode op, Flags::FlagOp fop, const char* tag, 
+                 WriteBack wb){
+        const IRValue result = emitALU(block, op, ty, lhs, rhs, fop, tag);
+
+        if(wb == WriteBack::Yes)
+            writeOperand(di, ops[0], result, block); 
+    }
+
+    //data movement instructions 
+    void emitMOV(const DecodedInstr& di, IRBasicBlock& block){
+        
+        const ZydisDecodedOperand* op = di.operands; 
+        const IRType dstTy = destWidth(ops[0], ops[1]);
+        
+        const IRValue src = readOperand(di, ops[1], block, dstTy); 
+        writeOperand(di, ops[0], src, block); 
+    }
+
+
+
+
 
     //  INSTRUCTION LIFTING
     //
