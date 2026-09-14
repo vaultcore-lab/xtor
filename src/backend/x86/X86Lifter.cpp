@@ -1486,9 +1486,375 @@ private:
         emitExtendingMove(di, block, Opcode::SEXT, "movsx");
     }
 
+      void emitADD(const DecodedInstr& di, IRBasicBlock& block) {
+        emitRMW(di, block, Opcode::ADD, Flags::FlagOp::ADD, "add",
+                WriteBack::Yes);
+    }
 
+    void emitSUB(const DecodedInstr& di, IRBasicBlock& block) {
+        emitRMW(di, block, Opcode::SUB, Flags::FlagOp::SUB, "sub",
+                WriteBack::Yes);
+    }
 
+    void emitCMP(const DecodedInstr& di, IRBasicBlock& block) {
+        emitRMW(di, block, Opcode::SUB, Flags::FlagOp::SUB, "cmp_sub",
+                WriteBack::No);
+    }
 
+     void emitCarryArith(const DecodedInstr& di, IRBasicBlock& block,
+                        Opcode op, Flags::FlagOp fop, const char* tag) {
+
+        const ZydisDecodedOperand* ops = di.operands;
+
+        const IRType ty  = destWidth(ops[0], ops[1]);
+        const IRValue lhs = readOperand(di, ops[0], block, ty);
+        IRValue rhs = readOperand(di, ops[1], block, ty);
+
+        if (m_flagState.valid()) {
+            IRValue cf = m_flagState.materialise(
+                Flags::FlagRequest::CF, block, [this] { return newTemp(); });
+
+            const uint32_t cfWideId = newTemp();
+            block.pushInst(IRInst::makeCast(
+                Opcode::ZEXT, VReg(cfWideId, "cf_in"), ty, cf));
+
+            const uint32_t rhsPlusId = newTemp();
+            block.pushInst(IRInst::makeBinop(
+                Opcode::ADD, VReg(rhsPlusId, "rhs_carry"), ty,
+                rhs, IRValue::makeVReg(cfWideId, ty)));
+            rhs = IRValue::makeVReg(rhsPlusId, ty);
+        }
+
+        const IRValue result = emitALU(block, op, ty, lhs, rhs, fop, tag);
+        writeOperand(di, ops[0], result, block);
+    }
+
+     void emitADC(const DecodedInstr& di, IRBasicBlock& block) {
+        emitCarryArith(di, block, Opcode::ADD, Flags::FlagOp::ADD, "adc");
+    }
+
+    void emitSBB(const DecodedInstr& di, IRBasicBlock& block) {
+        emitCarryArith(di, block, Opcode::SUB, Flags::FlagOp::SUB, "sbb");
+    }
+
+    void emitIncDec(const DecodedInstr& di, IRBasicBlock& block,
+                    Opcode op, Flags::FlagOp fop, const char* tag) {
+
+        const ZydisDecodedOperand& dst = di.operands[0];
+
+        const IRType ty  = operandWidth(dst);
+        const IRValue src = readOperand(di, dst, block, ty);
+        const IRValue one = IRValue::makeImm(1, ty);
+
+        const IRValue result = emitALU(block, op, ty, src, one, fop, tag);
+        writeOperand(di, dst, result, block);
+    }
+
+    void emitINC(const DecodedInstr& di, IRBasicBlock& block) {
+        emitIncDec(di, block, Opcode::ADD, Flags::FlagOp::INC, "inc");
+    }
+
+    void emitDEC(const DecodedInstr& di, IRBasicBlock& block) {
+        emitIncDec(di, block, Opcode::SUB, Flags::FlagOp::DEC, "dec");
+    }
+
+    void emitAND(const DecodedInstr& di, IRBasicBlock& block) {
+        emitRMW(di, block, Opcode::AND, Flags::FlagOp::AND, "bw",
+                WriteBack::Yes);
+    }
+
+    void emitOR(const DecodedInstr& di, IRBasicBlock& block) {
+        emitRMW(di, block, Opcode::OR, Flags::FlagOp::OR, "bw",
+                WriteBack::Yes);
+    }
+
+    void emitXOR(const DecodedInstr& di, IRBasicBlock& block) {
+        emitRMW(di, block, Opcode::XOR, Flags::FlagOp::XOR, "bw",
+                WriteBack::Yes);
+    }
+
+    void emitTEST(const DecodedInstr& di, IRBasicBlock& block) {
+        emitRMW(di, block, Opcode::AND, Flags::FlagOp::AND, "test_and",
+                WriteBack::No);
+    }
+
+       void emitNOT(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedOperand& dst = di.operands[0];
+
+        const IRType ty  = operandWidth(dst);
+        const IRValue src = readOperand(di, dst, block, ty);
+
+        const uint32_t id = newTemp();
+        block.pushInst(IRInst::makeUnop(Opcode::NOT, VReg(id, "unary"), ty, src));
+
+        // Flags untouched — m_flagState left as-is.
+        writeOperand(di, dst, IRValue::makeVReg(id, ty), block);
+    }
+
+    void emitNEG(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedOperand& dst = di.operands[0];
+
+        const IRType ty  = operandWidth(dst);
+        const IRValue src = readOperand(di, dst, block, ty);
+
+        const uint32_t id = newTemp();
+        block.pushInst(IRInst::makeUnop(Opcode::NEG, VReg(id, "unary"), ty, src));
+        const IRValue result = IRValue::makeVReg(id, ty);
+
+        // NEG x is SUB(0, x) as far as flags are concerned, so record it
+        // that way and CF/OF come out right. That operand shape does not
+        // fit emitALU's (result, lhs, rhs) recording, which is why the set
+        // is done here by hand.
+        m_flagState.set(Flags::FlagOp::SUB,
+                        result, IRValue::makeImm(0, ty), src, ty);
+
+        writeOperand(di, dst, result, block);
+    }
+
+     // SHR is a *logical* right shift (zero fill) and SAR is *arithmetic*
+    // (sign fill) — mapping either to the wrong IR opcode breaks every
+    // signed division-by-power-of-two idiom a compiler emits.
+    void emitShift(const DecodedInstr& di, IRBasicBlock& block,
+                   Opcode op, Flags::FlagOp fop) {
+
+        const ZydisDecodedOperand* ops = di.operands;
+
+        const IRType ty = operandWidth(ops[0]);
+        const IRValue val = readOperand(di, ops[0], block, ty);
+
+        // The shift amount arrives as an i8 (either an immediate or CL), so
+        // it is zero-extended to the operation width first; the IR requires
+        // both binop operands to share a type.
+        const IRValue amt = readOperand(di, ops[1], block, IRType::i8());
+        const uint32_t extId = newTemp();
+        block.pushInst(IRInst::makeCast(
+            Opcode::ZEXT, VReg(extId, "shamt"), ty, amt));
+        const IRValue wideAmt = IRValue::makeVReg(extId, ty);
+
+        const IRValue result =
+            emitALU(block, op, ty, val, wideAmt, fop, "shift");
+
+        writeOperand(di, ops[0], result, block);
+    }
+
+    void emitSHL(const DecodedInstr& di, IRBasicBlock& block) {
+        emitShift(di, block, Opcode::SHL, Flags::FlagOp::SHL);
+    }
+
+    void emitSHR(const DecodedInstr& di, IRBasicBlock& block) {
+        emitShift(di, block, Opcode::LSHR, Flags::FlagOp::SHR);
+    }
+
+    void emitSAR(const DecodedInstr& di, IRBasicBlock& block) {
+        emitShift(di, block, Opcode::ASHR, Flags::FlagOp::SAR);
+    }
+
+    void emitNOP(const DecodedInstr& di, IRBasicBlock& block) {
+        block.pushInst(IRInst::makeNop());
+    }
+
+    void emitIMUL(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedInstruction& z = di.zydis;
+        const ZydisDecodedOperand* ops = di.operands;
+
+        if (z.operand_count_visible == 1) {
+            // One-operand form: RDX:RAX = RAX * src, a 128-bit
+            // result split across two registers.
+            //
+            // The IR has no 128-bit type, so we keep the low half
+            // in RAX and zero RDX. That is correct whenever the
+            // product fits in 64 bits (the overwhelmingly common
+            // case) and wrong otherwise — a known limitation.
+            IRValue rax = readReg(ZYDIS_REGISTER_RAX, block);
+            IRValue src = readOperand(di, ops[0], block, IRType::i64());
+
+            uint32_t lo = newTemp();
+            block.pushInst(IRInst::makeBinop(
+                Opcode::MUL, VReg(lo, "imul_lo"), IRType::i64(),
+                rax, src));
+
+            writeReg(ZYDIS_REGISTER_RAX,
+                     IRValue::makeVReg(lo, IRType::i64()), block);
+            writeReg(ZYDIS_REGISTER_RDX,
+                     IRValue::makeImm(0, IRType::i64()), block);
+
+            m_flagState.set(Flags::FlagOp::IMUL,
+                            IRValue::makeVReg(lo, IRType::i64()),
+                            rax, src, IRType::i64());
+
+        } else if (z.operand_count_visible == 2) {
+            // Two-operand form: dst = dst * src.
+            IRType ty  = typeOfReg(ops[0].reg.value);
+            IRValue lhs = readOperand(di, ops[0], block, ty);
+            IRValue rhs = readOperand(di, ops[1], block, ty);
+
+            uint32_t id = newTemp();
+            block.pushInst(IRInst::makeBinop(
+                Opcode::MUL, VReg(id, "imul"), ty, lhs, rhs));
+
+            IRValue result = IRValue::makeVReg(id, ty);
+            m_flagState.set(Flags::FlagOp::IMUL, result, lhs, rhs, ty);
+            writeReg(ops[0].reg.value, result, block);
+
+        } else {
+            // Three-operand form: dst = src1 * imm. Note the
+            // sources are ops[1] and ops[2]; ops[0] is write-only.
+            IRType ty = typeOfReg(ops[0].reg.value);
+            IRValue lhs = readOperand(di, ops[1], block, ty);
+            IRValue rhs = readOperand(di, ops[2], block, ty);
+
+            uint32_t id = newTemp();
+            block.pushInst(IRInst::makeBinop(
+                Opcode::MUL, VReg(id, "imul3"), ty, lhs, rhs));
+
+            IRValue result = IRValue::makeVReg(id, ty);
+            m_flagState.set(Flags::FlagOp::IMUL, result, lhs, rhs, ty);
+            writeReg(ops[0].reg.value, result, block);
+        }
+    }
+
+    void emitMUL(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedOperand* ops = di.operands;
+
+        IRValue rax = readReg(ZYDIS_REGISTER_RAX, block);
+        IRValue src = readOperand(di, ops[0], block, IRType::i64());
+
+        uint32_t lo = newTemp();
+        block.pushInst(IRInst::makeBinop(
+            Opcode::MUL, VReg(lo, "mul_lo"), IRType::i64(), rax, src));
+
+        writeReg(ZYDIS_REGISTER_RAX,
+                 IRValue::makeVReg(lo, IRType::i64()), block);
+        writeReg(ZYDIS_REGISTER_RDX,
+                 IRValue::makeImm(0, IRType::i64()), block);
+
+        m_flagState.set(Flags::FlagOp::IMUL,
+                        IRValue::makeVReg(lo, IRType::i64()),
+                        rax, src, IRType::i64());
+    }
+
+    //IDIV / DIV 
+    // RAX = RDX:RAX / src, RDX = remainder.
+    void emitDIV(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedInstruction& z = di.zydis;
+        const ZydisDecodedOperand* ops = di.operands;
+
+        const bool isSigned = (z.mnemonic == ZYDIS_MNEMONIC_IDIV);
+        Opcode divOp = isSigned ? Opcode::SDIV : Opcode::UDIV;
+        Opcode remOp = isSigned ? Opcode::SREM : Opcode::UREM;
+        IRValue rax = readReg(ZYDIS_REGISTER_RAX, block);
+        IRValue src = readOperand(di, ops[0], block, IRType::i64());
+
+        uint32_t qId = newTemp();
+        uint32_t rId = newTemp();
+        block.pushInst(IRInst::makeBinop(
+            divOp, VReg(qId, "div_q"), IRType::i64(), rax, src));
+
+        block.pushInst(IRInst::makeBinop(
+            remOp, VReg(rId, "div_r"), IRType::i64(), rax, src));
+
+        writeReg(ZYDIS_REGISTER_RAX,
+                 IRValue::makeVReg(qId, IRType::i64()), block);
+        writeReg(ZYDIS_REGISTER_RDX,
+                 IRValue::makeVReg(rId, IRType::i64()), block);
+
+        // Flags undefined after DIV/IDIV — invalidate so any
+        // following Jcc reports the problem instead of inventing
+        // a condition from stale data.
+        m_flagState.invalidate();
+    }
+
+     void emitJcc(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedInstruction& z = di.zydis;
+
+        std::optional<uint64_t> taken = relativeTarget(di);
+
+        const uint64_t fallthroughVA = di.va + di.length;
+
+        const std::string trueLabel =
+            taken.has_value() ? labelFor(*taken) : std::string{};
+        const std::string falseLabel = labelFor(fallthroughVA);
+
+        if (trueLabel.empty() || falseLabel.empty()) {
+            IRInst marker = IRInst::makeNop();
+            marker.setSourceAddr(di.va);
+            block.pushInst(std::move(marker));
+            if (!falseLabel.empty())
+                block.pushInst(IRInst::makeJmp(falseLabel));
+            return;
+        }
+
+        std::optional<Flags::FlagRequest> req =
+            Flags::flagRequestForJcc(z.mnemonic);
+
+        if (!req.has_value()) {
+            block.pushInst(IRInst::makeJmp(falseLabel));
+            return;
+        }
+
+        IRValue cond = m_flagState.materialise(
+            *req, block, [this] { return newTemp(); });
+
+        block.pushInst(IRInst::makeCjmp(cond, trueLabel, falseLabel));
+    }
+
+    void emitSETcc(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedInstruction& z = di.zydis;
+        const ZydisDecodedOperand* ops = di.operands;
+
+        std::optional<Flags::FlagRequest> req = condRequestFor(z.mnemonic);
+        if (!req.has_value()) {
+            block.pushInst(IRInst::makeNop());
+            return;
+        }
+
+        IRValue cond = m_flagState.materialise(
+            *req, block, [this] { return newTemp(); });
+
+        // i1 -> i8, because SETcc's destination is byte-sized.
+        uint32_t id = newTemp();
+        block.pushInst(IRInst::makeCast(
+            Opcode::ZEXT, VReg(id, "setcc"), IRType::i8(), cond));
+        writeOperand(di, ops[0],
+                     IRValue::makeVReg(id, IRType::i8()), block);
+    }
+
+    void emitCMOVcc(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedInstruction& z   = di.zydis;
+        const ZydisDecodedOperand*     ops = di.operands;
+
+        std::optional<Flags::FlagRequest> req = condRequestFor(z.mnemonic);
+        if (!req.has_value()) {
+            block.pushInst(IRInst::makeNop());
+            return;
+        }
+
+        IRType ty  = typeOfReg(ops[0].reg.value);
+        IRValue oldVal = readOperand(di, ops[0], block, ty);
+        IRValue newVal = readOperand(di, ops[1], block, ty);
+        IRValue cond = m_flagState.materialise(
+            *req, block, [this] { return newTemp(); });
+
+        uint32_t id = newTemp();
+        block.pushInst(IRInst::makeSelect(
+            VReg(id, "cmov"), ty, cond, newVal, oldVal));
+        writeReg(ops[0].reg.value,
+                 IRValue::makeVReg(id, ty), block);
+    }
+
+    void emitJMP(const DecodedInstr& di, IRBasicBlock& block) {
+        std::optional<uint64_t> target = relativeTarget(di);
+        std::string label = target.has_value() ? labelFor(*target)
+                                               : std::string{};
+
+        if (!label.empty()) {
+            block.pushInst(IRInst::makeJmp(label));
+        } else {
+            IRInst nop = IRInst::makeNop();
+            nop.setSourceAddr(di.va);
+            block.pushInst(std::move(nop));
+        }
+    }
 
 
 
