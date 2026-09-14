@@ -1463,6 +1463,33 @@ private:
         writeOperand(di, ops[0], src, block); 
     }
 
+    void emitExtendingMove(const DecodedInstr& di, IRBasicBlock& block, 
+                           Opcode castOp, const char* tag){
+
+        const ZydisDecodedOperand* ops = di.operands; 
+
+        const IRType srcTy = operandWidth(ops[1]); 
+        const IRType dstTy = typeOfReg(ops[0].reg.value); 
+
+        const IRValue src = readOperand(di, ops[i], block, srcTy); 
+        const uint32_t id = newTemp(); 
+        block.pushInst(IRInst::makeCast(castOp, VReg(id, tag), dstTy, src)); 
+
+        writeReg(ops[0].reg.value, IRValue::makeVReg(id, dstTy), block); 
+
+    }
+    void emitMOVZX(const DecodedInstr& di, IRBasicBlock& block) {
+        emitExtendingMove(di, block, Opcode::ZEXT, "movzx");
+    }
+
+    void emitMOVSX(const DecodedInstr& di, IRBasicBlock& block) {
+        emitExtendingMove(di, block, Opcode::SEXT, "movsx");
+    }
+
+
+
+
+
 
 
 
