@@ -1856,8 +1856,150 @@ private:
         }
     }
 
+    void emitCALL(const DecodedInstr& di, IRBasicBlock& block){
+        
+        const ZydisDecodedOperand* ops = di.operands; 
+
+        IRValue callee = IRValue::makeImm(0, IRType::ptr()); 
+        IRValue retTy = IRType::i64();c 
+
+        std::optional<uint64_t> target = relativeTarget(di); 
+
+        if(target.has_value()){
+           
+            //for direct calls 
+            //call @prinf 
+            std::string sym = m_program.symbolAt(*target);
+            
+            callee = sym.empty()
+                ? IRValue::makeImm(static_cast<int64_t>(*target), IRType::ptr()) 
+                : IRValue::makeGlobal(sym, IRType::ptr()); 
+        }else{
+
+            //indirect calls 
+            IRValue  addrVal = readOperand(di, ops[0], block, IRType::i64());
+            uint32_t ptrId   = newTemp();
+            block.pushInst(IRInst::makeCast(
+                Opcode::INTTOPTR,
+                VReg(ptrId, "icall_ptr"),
+                IRType::ptr(),
+                addrVal));
+
+            callee = IRValue::makeVReg(ptrId, IRType::ptr());
+        }
+
+         uint32_t retId = newTemp();
+        block.pushInst(IRInst::makeCall(
+            VReg(retId, "retval"),
+            retTy,
+            callee,
+            {},                    // args live in the ABI registers
+            CallingConv::C,
+            false));
+
+        // System V returns integers in RAX; model that explicitly
+        // so the caller's next read of RAX sees the result.
+        writeReg(ZYDIS_REGISTER_RAX,
+                 IRValue::makeVReg(retId, retTy),
+                 block);
+
+        m_flagState.invalidate();
+    }
 
 
+    void emitRET(const DecodedInstr& di, IRBasicBlock& block) {
+        if (m_fn.returnType().isVoid()) {
+            block.pushInst(IRInst::makeRet());
+        } else {
+            // System V: integer return values come back in RAX.
+            block.pushInst(IRInst::makeRet(
+                IRValue::makeVReg(GprVReg::RAX, IRType::i64(), "rax")));
+        }
+    }
+
+    void emitPUSH(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedOperand* ops = di.operands;
+
+        IRValue val = readOperand(di, ops[0], block, IRType::i64());
+        pushStack(val, block);
+    }
+
+    void emitPOP(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedOperand* ops = di.operands;
+
+        IRValue val = popStack(block);
+        writeOperand(di, ops[0], val, block);
+    }
+
+
+    void emitLEAVE(const DecodedInstr& di, IRBasicBlock& block) {
+        block.pushInst(IRInst::makeMov(
+            VReg(GprVReg::RSP, "rsp"), IRType::i64(),
+            IRValue::makeVReg(GprVReg::RBP, IRType::i64(), "rbp")));
+
+        IRValue oldBp = popStack(block);
+        block.pushInst(IRInst::makeMov(
+            VReg(GprVReg::RBP, "rbp"), IRType::i64(), oldBp));
+    }
+
+    void emitCWDE(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedInstruction& z = di.zydis;
+
+        const bool isCdqe = (z.mnemonic == ZYDIS_MNEMONIC_CDQE);
+        IRType srcTy = isCdqe ? IRType::i32() : IRType::i16();
+        IRType dstTy = isCdqe ? IRType::i64() : IRType::i32();
+
+        IRValue src = readReg(isCdqe ? ZYDIS_REGISTER_EAX
+                                     : ZYDIS_REGISTER_AX, block);
+        uint32_t id = newTemp();
+        block.pushInst(IRInst::makeCast(
+            Opcode::SEXT, VReg(id, "cdqe"), dstTy, src));
+        (void)srcTy;
+        writeReg(isCdqe ? ZYDIS_REGISTER_RAX : ZYDIS_REGISTER_EAX,
+                 IRValue::makeVReg(id, dstTy), block);
+    }
+
+    void emitCDQ(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedInstruction& z = di.zydis;
+
+        const bool isCqo = (z.mnemonic == ZYDIS_MNEMONIC_CQO);
+        IRType ty  = isCqo ? IRType::i64() : IRType::i32();
+        const int64_t shiftAmt = isCqo ? 63 : 31;
+
+        IRValue rax = readReg(isCqo ? ZYDIS_REGISTER_RAX
+                                    : ZYDIS_REGISTER_EAX, block);
+        uint32_t id = newTemp();
+        block.pushInst(IRInst::makeBinop(
+            Opcode::ASHR, VReg(id, "sign_spread"), ty,
+            rax, IRValue::makeImm(shiftAmt, ty)));
+        writeReg(isCqo ? ZYDIS_REGISTER_RDX : ZYDIS_REGISTER_EDX,
+                 IRValue::makeVReg(id, ty), block);
+    }
+
+
+    void emitXCHG(const DecodedInstr& di, IRBasicBlock& block) {
+        const ZydisDecodedOperand* ops = di.operands;
+        
+        IRType ty = destWidth(ops[0], ops[1]);
+        IRValue a  = readOperand(di, ops[0], block, ty);
+        IRValue b  = readOperand(di, ops[1], block, ty);
+        writeOperand(di, ops[0], b, block);
+        writeOperand(di, ops[1], a, block);
+    }
+
+    void emitSYSCALL(const DecodedInstr& di, IRBasicBlock& block) {
+        uint32_t retId = newTemp();
+        block.pushInst(IRInst::makeCall(
+            VReg(retId, "sysret"),
+            IRType::i64(),
+            IRValue::makeGlobal("syscall", IRType::ptr()),
+            {},
+            CallingConv::C,
+            false));
+        writeReg(ZYDIS_REGISTER_RAX,
+                 IRValue::makeVReg(retId, IRType::i64()), block);
+        m_flagState.invalidate();
+    }
 
 
     //  INSTRUCTION LIFTING
@@ -2069,4 +2211,227 @@ private:
         }
 
     }
+}; 
+
+
+static uint64_t functionExtent(const std::vector<SymbolInfo>& syms,
+                               size_t index,
+                               uint64_t textStart,
+                               uint64_t textEnd) {
+    const SymbolInfo& sym = syms[index];
+
+    if (sym.size != 0)
+        return sym.size;
+
+    // Walk forward for the next symbol that starts inside .text and after
+    // this one; symbols are address-sorted, so the first hit is nearest.
+    for (size_t j = index + 1; j < syms.size(); ++j) {
+        if (syms[j].address > sym.address &&
+            syms[j].address >= textStart && syms[j].address < textEnd)
+            return syms[j].address - sym.address;
+    }
+    return textEnd - sym.address;
 }
+
+
+IRProgram liftX86ToIR(const ElfLoad::ElfLoadResult& elf) {
+    IRProgram program;
+
+    ELFIO::elfio reader;
+    if (!reader.load(elf.path))
+        throw std::runtime_error("liftX86ToIR: cannot re-open ELF for symbols: "
+                                 + elf.path);
+
+    const std::vector<SymbolInfo> symbols = readSymbols(reader);
+
+    for (const auto& s : symbols)
+        program.registerSymbol(s.address, s.name);
+
+    const uint64_t dataStart = elf.dataAddr;
+    const uint64_t dataEnd   = elf.dataAddr + elf.dataSize;
+
+    for (const auto& s : symbols) {
+        if (s.type != ELFIO::STT_OBJECT) continue;
+
+        // Copy the initial bytes out of .data when the symbol lies inside
+        // the range we loaded. Anything outside (.bss, or a section we did
+        // not read) is recorded as zero-initialised.
+        std::vector<uint8_t> bytes;
+        bool zeroInit = true;
+
+        if (s.size != 0 && s.address >= dataStart && s.address + s.size <= dataEnd) {
+            const size_t offset = static_cast<size_t>(s.address - dataStart);
+            bytes.assign(elf.data.begin() + offset,
+                         elf.data.begin() + offset + static_cast<size_t>(s.size));
+            zeroInit = false;
+        }
+
+        program.addGlobal(IRGlobal(
+            s.name,
+            IRType::ptr(),      // globals are addressed, not value-typed here
+            s.address,
+            /*isReadOnly=*/false,
+            zeroInit,
+            std::move(bytes)));
+    }
+
+    const uint64_t textStart = elf.textAddr;
+    const uint64_t textEnd   = elf.textAddr + elf.textSize;
+
+    X86Disassembler disasm;
+    CFGBuilder cfgBuilder;
+    size_t  liftedCount = 0;
+
+    for (size_t i = 0; i < symbols.size(); ++i) {
+        const SymbolInfo& sym = symbols[i];
+
+        if (sym.type != ELFIO::STT_FUNC)            continue;
+        if (sym.address < textStart)                continue;
+        if (sym.address >= textEnd)                 continue;
+
+        uint64_t extent = functionExtent(symbols, i, textStart, textEnd);
+
+        if (sym.address + extent > textEnd)
+            extent = textEnd - sym.address;
+        if (extent == 0)                            continue;
+
+        const size_t offset = static_cast<size_t>(sym.address - textStart);
+
+        std::vector<DecodedInstr> instrs =
+            disasm.disassemble(elf.text.data() + offset,
+                               static_cast<size_t>(extent),
+                               sym.address);
+        if (instrs.empty()) continue;
+
+        std::map<uint64_t, std::vector<DecodedInstr>> blocks =
+            cfgBuilder.buildCFG(instrs);
+
+
+        FunctionLifter lifter(sym.name, IRType::i64(), CallingConv::C, program);
+        program.addFunction(lifter.lift(blocks));
+        ++liftedCount;
+    }
+
+    if (liftedCount == 0 && elf.hasText()) {
+        std::cerr << "liftX86ToIR: no function symbols found — "
+                     "lifting .text as a single synthetic function\n";
+
+        std::vector<DecodedInstr> instrs =
+            disasm.disassemble(elf.text.data(), elf.text.size(), textStart);
+
+        if (!instrs.empty()) {
+            std::map<uint64_t, std::vector<DecodedInstr>> blocks =
+                cfgBuilder.buildCFG(instrs);
+
+            FunctionLifter lifter("_text", IRType::i64(), CallingConv::C, program);
+            program.addFunction(lifter.lift(blocks));
+        }
+    }
+
+    return program;
+}
+
+const char* toString(ExitKind kind) {
+    switch (kind) {
+        case ExitKind::Fallthrough:   return "fallthrough";
+        case ExitKind::DirectJump:    return "direct-jump";
+        case ExitKind::Conditional:   return "conditional";
+        case ExitKind::DirectCall:    return "direct-call";
+        case ExitKind::IndirectJump:  return "indirect-jump";
+        case ExitKind::IndirectCall:  return "indirect-call";
+        case ExitKind::Return:        return "return";
+        case ExitKind::Syscall:       return "syscall";
+        case ExitKind::Unsupported:   return "unsupported";
+    }
+    return "?";
+}
+
+bool isStaticallyKnown(ExitKind kind) {
+    switch (kind) {
+        case ExitKind::Fallthrough:
+        case ExitKind::DirectJump:
+        case ExitKind::Conditional:
+        case ExitKind::DirectCall:
+        case ExitKind::Syscall:
+            return true;
+
+        case ExitKind::IndirectJump:
+        case ExitKind::IndirectCall:
+        case ExitKind::Return:
+        case ExitKind::Unsupported:
+            return false;
+    }
+    return false;
+}
+
+TranslationBlock liftTranslationBlock(uint64_t guestVA, 
+                                      const uint8_t *bytes, 
+                                      size_t length, 
+                                      const IRProgram symbols, 
+                                      const TBlimits& limit){
+    static const X86Disassmbler disasm;
+    
+    TranslationBlocktb; 
+    tb.guestStart = guestVA; 
+    tb.guestEnd = guestVA; 
+
+    size_t blockBytes = std::min<size_t>(length, limits.maxBytes); 
+
+    if(limit.stopAtPageBoundary && limits.pageSize != 0){
+        
+        const uint64_t pageEnd = 
+            (guestVA / limits.pageSize + 1) * limits.pageSize; 
+        const uint64_t toPageEnd = pageEnd - guestVA; 
+        if(toPageEnd < blockBytes)
+            blockBytes = static_cast<size_t>(toPageEnd); 
+    }
+
+    const size_t usable = length; 
+
+    if (bytes == nullptr || blockBytes == 0) {
+        tb.exit = ExitKind::Unsupported;
+        tb.note = "no guest bytes available at this address";
+        tb.hasFallthrough = false;
+        tb.ir = IRFunction("tb_empty", IRType::i64(), CallingConv::C);
+        return tb;
+    }
+
+    const TBDecode dec = disasm.disassembleTB(
+        bytes, usable, guestVA, limits.maxInstructions, blockBytes); 
+
+    const uint64_t endVA = 
+        dec.instrs.empty()
+        ? guestVA
+        : dec.instrs.back().va + dec.instrs.back().length;
+
+    const TBPlan plan = classifyTBExit(dec, endVA);
+
+    std::ostringstream fnName;
+    fnName << "tb_0x" << std::hex << guestVA;
+
+    FunctionLifter lifter(fnName.str(), IRType::i64(), CallingConv::C, symbols);
+    tb.ir = lifter.liftTB(guestVA, dec.instrs, plan, endVA);
+
+    tb.guestEnd   = endVA;
+    tb.byteLength = static_cast<uint32_t>(endVA - guestVA);
+    tb.instrCount = static_cast<uint32_t>(dec.instrs.size());
+
+    tb.exit = plan.kind;
+    tb.note = plan.note;
+
+    tb.hasTaken = plan.taken.has_value();
+    tb.taken = plan.taken.value_or(0);
+
+    tb.hasFallthrough = plan.fallthrough.has_value();
+    tb.fallthrough = plan.fallthrough.value_or(0);
+
+    if (dec.decodeFailed && !tb.note.empty()) {
+        std::ostringstream at;
+        at << tb.note << " at 0x" << std::hex << dec.failVA;
+        tb.note = at.str();
+    }
+
+    return tb;
+}
+
+} 

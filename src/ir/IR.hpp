@@ -514,8 +514,8 @@ public:
     const IRFunction* findFunction(const std::string& name) const;
 
 private:
-    std::vector<IRGlobal>                      m_globals;
-    std::vector<IRFunction>                    m_functions;
+    std::vector<IRGlobal> m_globals;
+    std::vector<IRFunction>  m_functions;
     std::unordered_map<uint64_t, std::string>  m_addrToSymbol;
 };
 
