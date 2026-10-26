@@ -41,7 +41,7 @@ GuestStackImage buildInitialStack(GuestMemory& mem,
                                   uint64_t stackTop,
                                   uint64_t stackSize);
 
-void stackInfo(const GuestStackImage& stack, const GuestMemory& mem,
-                   std::ostream& os);
+void printInitialStack(const GuestStackImage& stack, const GuestMemory& mem,
+                       std::ostream& os);
 } 
 

@@ -65,6 +65,5 @@ void applyRelro(const ElfFile& file, GuestMemory& mem, const GuestElfImage& imag
 
 void elfFileInfo(const ElfFile& file, std::ostream& os);
 
-// Print the summary of what was placed where.
-void imageInfo(const GuestElfImage& image, std::ostream& os);
+void printImageInfo(const GuestElfImage& image, std::ostream& os);
 }

@@ -54,8 +54,7 @@ public:
     // the translator following a bad jump target.
     std::vector<uint8_t> readCode(uint64_t guestAddr, size_t length) const;
 
-
-    void guestProcessInfo(std::ostream& os) const;
+    void printLoadInfo(std::ostream& os) const;
 
 private: 
 
